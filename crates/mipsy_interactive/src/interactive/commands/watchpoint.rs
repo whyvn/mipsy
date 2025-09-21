@@ -667,6 +667,7 @@ fn parse_watchpoint_arg(
 
         if let MpArgument::Number(MpNumber::Immediate(ref imm)) = arg {
             WatchpointTarget::MemAddr(match imm {
+                MpImmediate::Shamt(imm) => *imm as u32,
                 MpImmediate::I16(imm) => *imm as u32,
                 MpImmediate::U16(imm) => *imm as u32,
                 MpImmediate::I32(imm) => *imm as u32,

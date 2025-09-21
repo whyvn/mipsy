@@ -119,7 +119,7 @@ fn check_imm(
                     .into_compiler_mipsy_result(file_tag, line, col, col_end)?;
             }
         }
-        MpImmediate::I16(_) | MpImmediate::U16(_) | MpImmediate::I32(_) | MpImmediate::U32(_) => {}
+        MpImmediate::Shamt(_) | MpImmediate::I16(_) | MpImmediate::U16(_) | MpImmediate::I32(_) | MpImmediate::U32(_) => {}
     }
 
     Ok(())

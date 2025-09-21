@@ -208,6 +208,7 @@ pub(crate) fn print_command() -> Command {
                 MpArgument::Number(MpNumber::Immediate(imm)) => {
                     let imm =
                         match imm {
+                            MpImmediate::Shamt(imm) => imm as u32,
                             MpImmediate::I16(imm) => imm as u32,
                             MpImmediate::U16(imm) => imm as u32,
                             MpImmediate::I32(imm) => imm as u32,

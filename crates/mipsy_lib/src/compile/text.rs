@@ -37,6 +37,7 @@ pub fn find_instruction<'a>(
             }
         }
 
+        println!("?????????");
         if !matching_names.is_empty() {
             return Err(InternalError::Compiler(
                 compiler::Error::InstructionBadFormat {

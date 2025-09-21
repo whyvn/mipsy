@@ -349,15 +349,25 @@ impl InstSignature {
                     MpArgument::Register(MpRegister::Normal(reg)) => reg.to_register()?.to_u32(),
                     _ => unreachable!(),
                 },
-                ArgumentType::Shamt => match arg {
-                    MpArgument::Number(MpNumber::Immediate(MpImmediate::I16(num))) => {
-                        (*num as u16 as u32) & 0x1F
+                ArgumentType::Shamt =>  0x1F & match arg {
+                    MpArgument::Number(MpNumber::Immediate(imm)) => match imm {
+                        MpImmediate::I16(num) => *num as u16 as u32,
+                        MpImmediate::Shamt(num) => *num as u8 as u32,
+                        MpImmediate::LabelReference(label) => {
+                            if let Some(value) = program.constants.get(label) {
+                                *value as i32 as u32
+                            } else {
+                                unreachable!()
+                            }
+                        }
+                        _ => unreachable!(),
                     }
                     _ => unreachable!(),
                 },
                 ArgumentType::I16 => match arg {
                     MpArgument::Number(num) => match num {
                         MpNumber::Immediate(imm) => match imm {
+                            &MpImmediate::Shamt(imm) => imm as u32,
                             &MpImmediate::I16(imm) => imm as u16 as u32,
                             &MpImmediate::U16(imm) => imm as u32,
                             MpImmediate::LabelReference(label) => {
@@ -382,6 +392,7 @@ impl InstSignature {
                 ArgumentType::U16 => match arg {
                     MpArgument::Number(num) => match num {
                         MpNumber::Immediate(imm) => match imm {
+                            &MpImmediate::Shamt(imm) => imm as u32,
                             &MpImmediate::I16(imm) => imm as u16 as u32,
                             &MpImmediate::U16(imm) => imm as u32,
                             MpImmediate::LabelReference(label) => {
@@ -516,7 +527,8 @@ impl ArgumentType {
                         Self::OffRs | Self::OffRt | Self::Off32Rs | Self::Off32Rt
                     ),
 
-                    MpImmediate::U16(_)
+                    MpImmediate::Shamt(_)
+                    | MpImmediate::U16(_)
                     | MpImmediate::U32(_)
                     | MpImmediate::I32(_)
                     | MpImmediate::LabelReference(_) => {
@@ -528,6 +540,7 @@ impl ArgumentType {
             MpArgument::Number(number) => {
                 match number {
                     MpNumber::Immediate(immediate) => match immediate {
+                        &MpImmediate::Shamt(num) => (0..=31).contains(&num),
                         &MpImmediate::I16(num) => match self {
                             Self::I16 | Self::I32 | Self::Off32Rs | Self::Off32Rt => true,
                             Self::U16 | Self::U32 => num >= 0,
@@ -548,7 +561,7 @@ impl ArgumentType {
                         }
                         MpImmediate::LabelReference(_) => match self {
                             Self::I32 | Self::U32 | Self::J | Self::Off32Rs | Self::Off32Rt => true,
-                            Self::I16 => relative_label,
+                            Self::Shamt | Self::I16 => relative_label,
                             _ => false,
                         },
                     },
@@ -675,6 +688,8 @@ impl PseudoSignature {
             },
             MpArgument::Number(num) => match num {
                 MpNumber::Immediate(imm) => match imm {
+                    // not right lol
+                    &MpImmediate::Shamt(imm) => (imm as u16, (imm as i32 >> 16) as u16),
                     &MpImmediate::I16(imm) => (imm as u16, (imm as i32 >> 16) as u16),
                     &MpImmediate::U16(imm) => (imm, 0),
                     &MpImmediate::I32(imm) => ((imm & 0xFFFF) as u16, (imm >> 16) as u16),
@@ -840,7 +855,6 @@ impl PseudoSignature {
                 ArgumentType::Rd
                 | ArgumentType::Rs
                 | ArgumentType::Rt
-                | ArgumentType::Shamt
                 | ArgumentType::J => {
                     self.new_variable(
                         program,
@@ -851,7 +865,7 @@ impl PseudoSignature {
                         last,
                     )?;
                 }
-                ArgumentType::I16 => {
+                ArgumentType::Shamt | ArgumentType::I16 => {
                     let arg = match arg {
                         // Relative label
                         MpArgument::Number(MpNumber::Immediate(MpImmediate::LabelReference(
@@ -864,14 +878,22 @@ impl PseudoSignature {
                                     + TEXT_BOT;
                             let imm = ((addr.wrapping_sub(current_inst_addr)) / 4) as i16;
 
-                            MpArgument::Number(MpNumber::Immediate(MpImmediate::I16(imm)))
+                            MpArgument::Number(MpNumber::Immediate(match arg_type {
+                                ArgumentType::I16 => MpImmediate::I16(imm),
+                                ArgumentType::Shamt => MpImmediate::Shamt(imm as _),
+                                _ => unreachable!()
+                            }))
                         }
                         _ => arg.clone(),
                     };
 
                     self.new_variable(
                         program,
-                        PseudoVariable::I16,
+                        match arg_type {
+                            ArgumentType::I16 => PseudoVariable::I16,
+                            ArgumentType::Shamt => PseudoVariable::Shamt,
+                            _ => unreachable!()
+                        },
                         arg,
                         &mut variables,
                         &mut used,

@@ -340,22 +340,22 @@ pub fn populate_labels_and_data(
                     ))) = arg.0
                     {
                         if let Some(&value) = binary.constants.get(label) {
-                            if u16::MIN as i64 <= value && u16::MAX as i64 >= value {
-                                arg.0 = MpArgument::Number(MpNumber::Immediate(MpImmediate::U16(
+                            arg.0 = if u16::MIN as i64 <= value && u16::MAX as i64 >= value {
+                                MpArgument::Number(MpNumber::Immediate(MpImmediate::U16(
                                     value as _,
-                                )));
+                                )))
                             } else if i16::MIN as i64 <= value && i16::MAX as i64 >= value {
-                                arg.0 = MpArgument::Number(MpNumber::Immediate(MpImmediate::I16(
+                                MpArgument::Number(MpNumber::Immediate(MpImmediate::I16(
                                     value as _,
-                                )));
+                                )))
                             } else if u32::MIN as i64 <= value && u32::MAX as i64 >= value {
-                                arg.0 = MpArgument::Number(MpNumber::Immediate(MpImmediate::U32(
+                                MpArgument::Number(MpNumber::Immediate(MpImmediate::U32(
                                     value as _,
-                                )));
+                                )))
                             } else if i32::MIN as i64 <= value && i32::MAX as i64 >= value {
-                                arg.0 = MpArgument::Number(MpNumber::Immediate(MpImmediate::I32(
+                                MpArgument::Number(MpNumber::Immediate(MpImmediate::I32(
                                     value as _,
-                                )));
+                                )))
                             } else {
                                 todo!();
                             }

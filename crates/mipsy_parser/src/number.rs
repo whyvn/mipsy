@@ -26,6 +26,7 @@ pub enum MpNumber {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum MpImmediate {
+    Shamt(u8),
     I16(i16),
     U16(u16),
     I32(i32),
@@ -54,6 +55,7 @@ impl fmt::Display for MpNumber {
 impl fmt::Display for MpImmediate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Shamt(i) => write!(f, "{}", i),
             Self::I16(i) => write!(f, "{}", i),
             Self::U16(i) => write!(f, "{}", i),
             Self::I32(i) => write!(f, "{}", i),
@@ -100,6 +102,7 @@ pub fn parse_binary_op_immedaite(i: Span<'_>) -> IResult<Span<'_>, MpNumber> {
 
 pub fn parse_immediate(i: Span<'_>) -> IResult<Span<'_>, MpImmediate> {
     alt((
+        map(parse_u8, MpImmediate::Shamt),
         map(parse_i16, MpImmediate::I16),
         map(parse_u16, MpImmediate::U16),
         map(parse_i32, MpImmediate::I32),

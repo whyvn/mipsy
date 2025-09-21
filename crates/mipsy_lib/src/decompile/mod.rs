@@ -209,6 +209,7 @@ pub fn decompile_inst_into_parts<'a>(
         break;
     }
 
+                            println!("hii");
     if let Some(inst) = inst {
         if inst.name() == "sll" && rd == 0 && rt == 0 && shamt == 0 {
             parts.inst_name = Some("nop".to_string());
@@ -224,7 +225,24 @@ pub fn decompile_inst_into_parts<'a>(
                         ArgumentType::Rd => format!("${}", Register::u32_to_str(rd)),
                         ArgumentType::Rt => format!("${}", Register::u32_to_str(rt)),
                         ArgumentType::Rs => format!("${}", Register::u32_to_str(rs)),
-                        ArgumentType::Shamt => format!("{}", shamt),
+                        ArgumentType::Shamt => {
+                            let mut res = None;
+
+                            if inst.compile_signature().relative_label() {
+                                for (label, &addr) in program.labels.iter() {
+                                    if addr == text_addr.wrapping_add((imm as i32 * 4) as u32) {
+                                        res = Some(label);
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if let Some(label) = res {
+                                label.to_string()
+                            } else {
+                                imm.to_string()
+                            }
+                        },
                         ArgumentType::OffRs => format!(
                             "{}(${})",
                             if imm != 0 {

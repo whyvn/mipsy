@@ -716,6 +716,7 @@ fn parse_breakpoint_arg(state: &State, arg: &String) -> Result<(u32, MipsyArgTyp
 
     if let MpArgument::Number(MpNumber::Immediate(ref imm)) = arg {
         Ok(match imm {
+            MpImmediate::Shamt(imm) => (*imm as u32, MipsyArgType::Immediate),
             MpImmediate::I16(imm) => (*imm as u32, MipsyArgType::Immediate),
             MpImmediate::U16(imm) => (*imm as u32, MipsyArgType::Immediate),
             MpImmediate::I32(imm) => (*imm as u32, MipsyArgType::Immediate),
